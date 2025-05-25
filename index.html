@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Te Amo</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            font-family: monospace;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        .centered-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FF69B4;
+            font-size: 48px;
+            z-index: 1;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="centered-text">MY LOVE</div>
+    <canvas id="matrix"></canvas>
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        const mainText = 'TE AMO';
+        const fontSize = 20;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        class Drop {
+            constructor(x) {
+                this.x = x;
+                this.y = Math.random() * canvas.height;
+                this.speed = 0.3 + Math.random() * 2;
+                this.isMainText = Math.random() < 0.5; // 50% chance to be 'TE AMO'
+                this.value = this.isMainText ? mainText : '';
+            }
+
+            getRandomChar() {
+                return '';
+            }
+
+            update() {
+                this.y += this.speed;
+                if (this.y * fontSize > canvas.height) {
+                    this.y = 0;
+                    this.isMainText = Math.random() < 0.1;
+                    this.value = this.isMainText ? mainText : '';
+                }
+                if (!this.isMainText) {
+                    if (Math.random() < 0.05) {
+                        this.value = this.getRandomChar();
+                    }
+                }
+            }
+
+            draw() {
+                ctx.font = `${this.isMainText ? fontSize * 1.5 : fontSize}px monospace`;
+                ctx.fillStyle = this.isMainText ? '#FF69B4' : '#FF69B4'; // Cambiado a rosa (Hot Pink)
+                ctx.fillText(this.value, this.x * fontSize, this.y * fontSize);
+            }
+        }
+
+        // Initialize drops
+        for (let i = 0; i < columns; i++) {
+            drops[i] = new Drop(i);
+        }
+
+         class ExplodingText {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.particles = [];
+                this.text = 'TE AMO';
+                this.fontSize = 50;
+                this.lifetime = 100; // Reducido a 100 frames (aproximadamente 1-2 segundos)
+                this.createParticles();
+            }
+
+            createParticles() {
+                const numParticles = 8;
+                for (let i = 0; i < numParticles; i++) {
+                    const angle = (Math.PI * 2 * i) / numParticles;
+                    const speed = 4 + Math.random() * 3;
+                    const distance = 100 + Math.random() * 30;
+                    this.particles.push({
+                        x: this.x + Math.cos(angle) * distance,
+                        y: this.y + Math.sin(angle) * distance,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        alpha: 1
+                    });
+                }
+            }
+
+            update() {
+                this.lifetime--;
+                this.particles.forEach(p => {
+                    p.x += p.vx * 0.5;
+                    p.y += p.vy * 0.5;
+                    p.alpha = Math.max(0, p.alpha - 0.02); // Aumentado la velocidad de desvanecimiento
+                });
+            }
+
+            draw() {
+                this.particles.forEach(p => {
+                    ctx.font = `${this.fontSize}px monospace`;
+                    ctx.fillStyle = `rgba(255, 105, 180, ${p.alpha})`;
+                    ctx.fillText(this.text, p.x, p.y);
+                });
+            }
+
+            isDead() {
+                return this.lifetime <= 0;
+            }
+        }
+
+        // Agregar array para almacenar explosiones
+        const explosions = [];
+
+        // Agregar event listener para el clic
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            explosions.push(new ExplodingText(x, y));
+        });
+
+        // Modificar la función draw para incluir las explosiones
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drops.forEach(drop => {
+                drop.update();
+                drop.draw();
+            });
+
+            // Actualizar y dibujar explosiones
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                explosions[i].update();
+                explosions[i].draw();
+                if (explosions[i].isDead()) {
+                    explosions.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            const newColumns = (canvas.width / fontSize) / spacing; // Aplicamos el espaciado aquí también
+            drops.length = 0;
+            for (let i = 0; i < newColumns; i++) {
+                drops[i] = new Drop(i);
+            }
+        });
+    </script>
+</body>
+</html>
